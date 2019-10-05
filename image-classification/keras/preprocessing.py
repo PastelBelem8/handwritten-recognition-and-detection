@@ -2,17 +2,14 @@
 
 import matplotlib.pyplot as plt # install matplotlib (pip install matplotlib)
 import cv2 # install opencv (pip install opencv-python)
-
-filename = "all_numbers_4_people_with_flash"
-colors = cv2.imread(f"imgs/{filename}.jpg")
-gray = cv2.imread(f"imgs/{filename}.jpg", cv2.IMREAD_GRAYSCALE)
+from scipy import ndimage
 
 
 def generate_plot(img):
     plt.imshow(img)
     plt.show()
 
-def generate_plots(color_img=colors, gray_img=gray):
+def generate_plots(color_img, gray_img):
     plt.subplot(211)
     plt.imshow(color_img)
     plt.subplot(212)
@@ -34,7 +31,7 @@ def write_img(img, name, ext="jpeg"):
     cv2.imwrite(f"processed_imgs/{name}.jpeg", img)
 
 
-def black_and_white_denoise(img, threshold=128): 
+def black_and_white_denoise(img, threshold=140): 
     # https://docs.opencv.org/master/d7/d4d/tutorial_py_thresholding.html
     # We are using Otsu's Binarization 
     return cv2.threshold(img, threshold, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
@@ -44,56 +41,96 @@ def scale_and_flatten(img):
     return img.flatten() / 255.0
 
 
-# ------------------- #
-# Test - Original     #
-# ------------------- #
-generate_plots()
+def crop_margins(img):
+    while np.sum(img[0]) == 0:
+        img = img[1:]
 
-# ----------------- #
-# Test - Resized    #
-# ----------------- #
-resized_colors = resize_img(colors)
-resized_gray = resize_img(gray)
+    while np.sum(img[:,0]) == 0:
+        img = np.delete(img,0,1)
 
-generate_plots(resized_colors, resized_gray)
+    while np.sum(img[-1]) == 0:
+        img = img[:-1]
 
-# ------------------------- #
-# Test - Inverted Colors    #
-# ------------------------- #
-inverted_colors = invert_colors(colors)
-inverted_gray = invert_colors(gray)
-
-generate_plots(inverted_colors, inverted_gray)
+    while np.sum(img[:,-1]) == 0:
+        img = np.delete(img,-1,1)
 
 
-# ------------------------- #
-# Test - Inverted Colors    #
-# ------------------------- #
-_, denoised_gray = black_and_white_denoise(gray)
-generate_plot(denoised_gray)
+def _resize_img(img, size=(20, 20)):
+    channels, rows, cols = img.shape
+    to_rows, to_cols = size
+
+    if rows > cols:
+        factor = to_rows/rows
+        rows = to_rows
+        cols = int(round(cols*factor))
+        img = cv2.resize(img, (cols,rows))
+    else:
+        factor = to_cols/cols
+        cols = to_cols
+        rows = int(round(rows*factor))
+        img = cv2.resize(img, (cols, rows))
+
+    return img
+
+def pad(img, size=(28, 28)):
+    rows, cols = img.shape
+    to_rows, to_cols = size
+    colsPadding = (int(math.ceil((to_cols-cols)/2.0)),int(math.floor((to_cols-cols)/2.0)))
+    rowsPadding = (int(math.ceil((to_rows-rows)/2.0)),int(math.floor((to_rows-rows)/2.0)))
+    img = np.lib.pad(img,(rowsPadding,colsPadding),'constant')
+    
+    return img
+
+def _getBestShift(img):
+    cy,cx = ndimage.measurements.center_of_mass(img)
+
+    rows,cols = img.shape
+    shiftx = np.round(cols/2.0-cx).astype(int)
+    shifty = np.round(rows/2.0-cy).astype(int)
+
+    return shiftx,shifty
+
+def _shift(img,sx,sy):
+    rows,cols = img.shape
+    M = np.float32([[1,0,sx],[0,1,sy]])
+    shifted = cv2.warpAffine(img,M,(cols,rows))
+    return shifted
 
 
-
-# ------------------------------------ #
-# Test - Other denoising algorithms    #
-# ------------------------------------ #
-img = cv2.medianBlur(gray,5)
-ret,th1 = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
-th2 = cv2.adaptiveThreshold(img,255,cv2.ADAPTIVE_THRESH_MEAN_C,\
-            cv2.THRESH_BINARY,11,2)
-th3 = cv2.adaptiveThreshold(img,255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C,\
-            cv2.THRESH_BINARY,11,2)
-titles = ['Original Image', 'Global Thresholding (v = 127)',
-            'Adaptive Mean Thresholding', 'Adaptive Gaussian Thresholding']
-images = [img, th1, th2, th3]
-for i in range(4):
-    plt.subplot(2,2,i+1)
-    plt.imshow(images[i],'gray')
-    plt.title(titles[i])
-    plt.xticks([]),plt.yticks([])
-plt.show()
+def shift(img):
+    shiftx,shifty = getBestShift(img)
+    shifted = shift(img,shiftx,shifty)
+    return shifted
 
 
+def run(img):
+    generate_plot(img)
+
+    t, img = black_and_white_denoise(img)   
+    generate_plot(img)
+
+    img = cv2.resize(255-img, (28, 28))
+    generate_plot(img)
+
+    img = crop_margins(img)
+    generate_plot(img)
+
+    img = _resize_img(img)
+    generate_plot(img)
+
+    img = pad(img)
+    generate_plot(img)
+
+    img = shift(img)
+    generate_plot(img)
+
+
+if __name__ == "__main__":
+    filename = "no_flash/all_data/1_1"
+    colors = cv2.imread(f"imgs/{filename}.jpg")
+    gray = cv2.imread(f"imgs/{filename}.jpg", cv2.IMREAD_GRAYSCALE)
+    generate_plots(colors, gray)
+    run(gray)
 
 # - [x] 1. Read Image
 # - [x] 2. Scale 
