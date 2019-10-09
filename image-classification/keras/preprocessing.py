@@ -3,15 +3,18 @@
 import matplotlib.pyplot as plt # install matplotlib (pip install matplotlib)
 import cv2 # install opencv (pip install opencv-python)
 from scipy import ndimage
+import numpy as np
+import math
+
 
 
 def generate_plot(img):
-    plt.imshow(img)
+    plt.imshow(img, cmap=plt.get_cmap('gray'))
     plt.show()
 
 def generate_plots(color_img, gray_img):
     plt.subplot(211)
-    plt.imshow(color_img)
+    plt.imshow(color_img, cmap=plt.get_cmap('gray'))
     plt.subplot(212)
     plt.imshow(gray_img, cmap=plt.get_cmap('gray'))
     plt.show()
@@ -53,10 +56,11 @@ def crop_margins(img):
 
     while np.sum(img[:,-1]) == 0:
         img = np.delete(img,-1,1)
-
+    
+    return img
 
 def _resize_img(img, size=(20, 20)):
-    channels, rows, cols = img.shape
+    rows, cols = img.shape
     to_rows, to_cols = size
 
     if rows > cols:
@@ -98,39 +102,51 @@ def _shift(img,sx,sy):
 
 
 def shift(img):
-    shiftx,shifty = getBestShift(img)
-    shifted = shift(img,shiftx,shifty)
+    shiftx,shifty = _getBestShift(img)
+    shifted = _shift(img,shiftx,shifty)
     return shifted
 
 
 def run(img):
-    generate_plot(img)
+    # generate_plot(img)
 
-    t, img = black_and_white_denoise(img)   
-    generate_plot(img)
-
-    img = cv2.resize(255-img, (28, 28))
-    generate_plot(img)
+    t, img = black_and_white_denoise(img, threshold=180)   
+    # generate_plot(img)
 
     img = crop_margins(img)
-    generate_plot(img)
+    # generate_plot(img)
 
+    img = cv2.resize(255-img, (28, 28))
+    # generate_plot(img)
+ 
     img = _resize_img(img)
-    generate_plot(img)
+    # generate_plot(img)
 
     img = pad(img)
-    generate_plot(img)
+    # generate_plot(img)
 
     img = shift(img)
     generate_plot(img)
 
 
 if __name__ == "__main__":
-    filename = "no_flash/all_data/1_1"
-    colors = cv2.imread(f"imgs/{filename}.jpg")
-    gray = cv2.imread(f"imgs/{filename}.jpg", cv2.IMREAD_GRAYSCALE)
-    generate_plots(colors, gray)
-    run(gray)
+
+    for i in range(0, 10):
+        filename = f"flash/all_data/1_{i}"
+        colors = cv2.imread(f"imgs/{filename}.jpg")
+        gray1 = cv2.imread(f"imgs/{filename}.jpg", cv2.IMREAD_GRAYSCALE)
+        # generate_plots(colors, gray1)
+        
+
+        filename = f"no_flash/all_data/1_{i}"
+        colors = cv2.imread(f"imgs/{filename}.jpg")
+        gray2 = cv2.imread(f"imgs/{filename}.jpg", cv2.IMREAD_GRAYSCALE)
+        # generate_plots(colors, gray)
+
+        generate_plots(gray1, gray2)
+        run(gray1)
+        run(gray2)
+
 
 # - [x] 1. Read Image
 # - [x] 2. Scale 

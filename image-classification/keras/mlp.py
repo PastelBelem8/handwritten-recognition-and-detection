@@ -1,3 +1,5 @@
+import pickle
+
 from keras.datasets import mnist
 from keras.models import Sequential
 from keras.layers import Dense
@@ -41,3 +43,6 @@ scores = model.evaluate(X_test, y_test, verbose=0)
 
 print("Baseline error: %.2f%%" % (100 - scores[1]*100))
 
+# save the model to disk
+filename = 'trained_mlp.sav'
+pickle.dump(model, open(filename, 'wb'))
