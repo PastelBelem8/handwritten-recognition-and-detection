@@ -4,8 +4,8 @@ This repository contains the resources used during the development of an
 ML system for handwritting recognition and detection. 
 
 
-This project is to be integrated in the  architectural field, hence it 
-will have a strong bias towards the state-of-the-art literature both in 
+This project is to be integrated in the architectural field, hence it 
+will have a strong bias towards the [state-of-the-art](https://docs.google.com/spreadsheets/d/1rHiDOpCiE8bEnyy9o4EmpVaEuURKVca-OpuCxVQ1TWs/edit?usp=sharing) literature both in 
 Architecture and computer vision. 
 
 
