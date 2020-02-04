@@ -1,2 +1,0 @@
-SET NOTEBOOK_DIR=C:\Users\catar\Projects\Extra\kaggle-competitions
-C:\Users\catar\Programs\Anaconda3\python.exe C:\Users\catar\Programs\Anaconda3\cwp.py C:\Users\catar\Programs\Anaconda3 "C:/Users/catar/Programs/Anaconda3/python.exe" "C:/Users/catar/Programs/Anaconda3/Scripts/jupyter-notebook-script.py" %NOTEBOOK_DIR%
